@@ -1,0 +1,5 @@
+string[] model_names
+float32 timeout_seconds
+---
+string[] detected_models
+geometry_msgs/PoseStamped[] detected_poses
