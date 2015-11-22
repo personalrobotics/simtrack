@@ -52,6 +52,8 @@
 #include <dynamic_reconfigure/server.h>
 #include <simtrack_nodes/VisualizationConfig.h>
 #include <simtrack_nodes/SwitchObjects.h>
+#include <simtrack_nodes/EnableService.h>
+#include <simtrack_nodes/DetectObjects.h>
 
 namespace simtrack {
 
@@ -66,6 +68,10 @@ public:
 private:
   bool switchObjects(simtrack_nodes::SwitchObjectsRequest &req,
                      simtrack_nodes::SwitchObjectsResponse &res);
+  bool enableService(simtrack_nodes::EnableServiceRequest &req,
+                     simtrack_nodes::EnableServiceResponse &res);
+  bool detectObjectService(simtrack_nodes::DetectObjectsRequest &req,
+                     simtrack_nodes::DetectObjectsResponse &res);
 
   void depthAndColorCb(const sensor_msgs::ImageConstPtr &depth_msg,
                        const sensor_msgs::ImageConstPtr &rgb_msg,
@@ -108,6 +114,11 @@ private:
   std::vector<std::string> obj_filenames_;
   int device_id_detector_;
   std::atomic<bool> detector_enabled_;
+
+  bool pause_detector_;
+  bool pause_tracker_;
+  std::string last_frame_id_;
+  ros::Time last_timestamp_;
 
   // most recent detector estimate
   std::mutex most_recent_detector_pose_mutex_;
@@ -152,6 +163,7 @@ private:
 
   // Services
   ros::ServiceServer switch_objects_srv_;
+  ros::ServiceServer enable_service_srv_;
 
   // Publishers
   boost::shared_ptr<image_transport::ImageTransport> debug_img_it_;

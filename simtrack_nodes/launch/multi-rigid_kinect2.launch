@@ -9,20 +9,20 @@
 
 <!--  <arg name="stream" value="hd" />
   <node name="simtrack" pkg="simtrack_nodes" type="multi_rigid_node" output="screen">
-  <remap from="rgb" to="/kinect2/$(arg stream)/image_mono_rect" />
+  <remap from="rgb" to="/head/kinect2/$(arg stream)/image_mono_rect" />
   <remap from="rgb/compressed" to="/kinect2/$(arg stream)/image_mono_rect/compressed" />
-  <remap from="rgb_info" to="/kinect2/$(arg stream)/camera_info" />
-  <remap from="depth" to="/kinect2/$(arg stream)/image_depth_rect" />
-  <remap from="depth/compressed" to="/kinect2/$(arg stream)/image_depth_rect/compressed" />
+  <remap from="rgb_info" to="/head/kinect2/$(arg stream)/camera_info" />
+  <remap from="depth" to="/head/kinect2/$(arg stream)/image_depth_rect" />
+  <remap from="depth/compressed" to="/head/kinect2/$(arg stream)/image_depth_rect/compressed" />
   </node>-->
 
   <!-- mixed stream, hd for detection but will be rescaled to qhd for tracking -->
-  <node name="simtrack" pkg="simtrack_nodes" type="multi_rigid_node" output="screen">
-  <remap from="rgb" to="/kinect2/hd/image_mono_rect" />
-  <remap from="rgb/compressed" to="/kinect2/hd/image_mono_rect/compressed" />
-  <remap from="rgb_info" to="/kinect2/hd/camera_info" />
-  <remap from="depth" to="/kinect2/qhd/image_depth_rect" />
-  <remap from="depth/compressed" to="/kinect2/qhd/image_depth_rect/compressed" />
+  <node name="simtrack" pkg="simtrack_nodes" type="multi_rigid_node" output="screen" launch-prefix="xterm -e gdb --args">
+  <remap from="rgb" to="/head/kinect2/qhd/image_mono_rect" />
+  <remap from="rgb/compressed" to="/head/kinect2/qhd/image_mono_rect/compressed" />
+  <remap from="rgb_info" to="/head/kinect2/qhd/camera_info" />
+  <remap from="depth" to="/head/kinect2/qhd/image_depth_rect" />
+  <remap from="depth/compressed" to="/head/kinect2/qhd/image_depth_rect/compressed" />
   </node>
 
 </launch>

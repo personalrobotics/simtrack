@@ -1,4 +1,2 @@
 simtrack/model_names:
-- ros_fuerte
-- ros_groovy
-- ros_hydro
+- fuze_bottle_visual

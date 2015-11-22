@@ -11,7 +11,7 @@ find_package(CUDA 6.5 REQUIRED)
 set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20)
 set(GENCODE_SM30 -gencode=arch=compute_30,code=sm_30)
 set(GENCODE_SM35 -gencode=arch=compute_35,code=sm_35)
-set(GENCODE_SM52 -gencode=arch=compute_52,code=sm_52)
+set(GENCODE_SM52 -gencode=arch=compute_50,code=sm_50)
 set(CUDA_NVCC_FLAGS -O3;-ftz=true;-prec-sqrt=false;-prec-div=false)
 set(CUDA_PROPAGATE_HOST_FLAGS ON) # propagate -DCUDA_SIFTGPU_ENABLED
 if (${CUDA_VERSION_MAJOR} LESS 7)
