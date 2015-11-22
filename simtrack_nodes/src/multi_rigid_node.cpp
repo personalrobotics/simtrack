@@ -288,6 +288,8 @@ bool MultiRigidNode::switchObjects(simtrack_nodes::SwitchObjectsRequest &req,
   return true;
 }
 
+
+// This can be used to enable/disable the detector or tracker remotely.
 bool MultiRigidNode::enableService(simtrack_nodes::EnableServiceRequest &req,
                    simtrack_nodes::EnableServiceResponse &res) {
     pause_detector_ = !req.enable_detector;
@@ -302,19 +304,27 @@ bool MultiRigidNode::enableService(simtrack_nodes::EnableServiceRequest &req,
         ROS_INFO("Enabling tracker");
     else
         ROS_INFO("Disabling tracker");
+
+    return true;
 }
 
+// This allows the detector to be used as a stand-alone service. Blocks until all the requested
+// objects have been detected, and returns their poses.
 bool MultiRigidNode::detectObjectService(simtrack_nodes::DetectObjectsRequest &req,
                    simtrack_nodes::DetectObjectsResponse &res) {
+
+    // Make sure to maintain the old detector state.
     bool detector_is_enabled = detector_enabled_.load();
     detector_enabled_.store(true);
 
     std::vector<std::string> models = obj_filenames_;
-    simtrack_nodes::SwitchObjectsRequest switchReq;
-    switchReq.model_names = req.model_names;
-    simtrack_nodes::SwitchObjectsResponse switchRes;
-    switchObjects(switchReq, switchRes);
-
+    // Switch to the new models to detect.
+    {
+        simtrack_nodes::SwitchObjectsRequest switchReq;
+        switchReq.model_names = req.model_names;
+        simtrack_nodes::SwitchObjectsResponse switchRes;
+        switchObjects(switchReq, switchRes);
+    }
     // Sleep to allow detector to switch objects
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -323,11 +333,13 @@ bool MultiRigidNode::detectObjectService(simtrack_nodes::DetectObjectsRequest &r
     float time = 0;
     bool has_all_objects;
     std::map<int, pose::TranslationRotation3D> pose_map;
+    // Wait for the detector to return poses for all the models in the list.
     while (!has_all_objects && time < timeout) {
         std::lock_guard<std::mutex> lock(most_recent_detector_pose_mutex_);
         pose_map[most_recent_detector_object_index_] = most_recent_detector_pose_;
         has_all_objects = true;
 
+        // Check if we found the object in the list.
         for (int i = 0; i < (int)objects_.size(); i++) {
             if (pose_map.find(i) == pose_map.end()) {
                 has_all_objects = false;
@@ -338,6 +350,7 @@ bool MultiRigidNode::detectObjectService(simtrack_nodes::DetectObjectsRequest &r
         time += 16 * 0.001;
     }
 
+    // Publish each detected pose.
     for (std::map<int, pose::TranslationRotation3D>::iterator it = pose_map.begin();
             it != pose_map.end(); it++)
     {
@@ -363,8 +376,17 @@ bool MultiRigidNode::detectObjectService(simtrack_nodes::DetectObjectsRequest &r
 
     }
 
+    // Switch back to the original detector state.
     detector_enabled_.store(detector_is_enabled);
-    return false;
+
+    // Switch back to the old models
+    {
+        simtrack_nodes::SwitchObjectsRequest switchReq;
+        switchReq.model_names = models;
+        simtrack_nodes::SwitchObjectsResponse switchRes;
+        switchObjects(switchReq, switchRes);
+    }
+    return true;
 }
 
 void MultiRigidNode::depthAndColorCb(
@@ -417,9 +439,6 @@ void MultiRigidNode::colorOnlyCb(
 void MultiRigidNode::updatePose(const cv_bridge::CvImageConstPtr &cv_rgb_ptr,
                                 const cv_bridge::CvImageConstPtr &cv_depth_ptr,
                                 const std::string &frame_id) {
-
-  if (pause_detector_)
-      return;
 
   if ((!color_only_mode_) && (cv_depth_ptr == nullptr))
     throw std::runtime_error("MultiRigidNode::updatePose: received "
@@ -483,7 +502,7 @@ void MultiRigidNode::updatePose(const cv_bridge::CvImageConstPtr &cv_rgb_ptr,
 
   // process frame if objects loaded in tracker
   // ------------------------------------------
-  if (multi_rigid_tracker_->getNumberOfObjects() > 0) {
+  if (multi_rigid_tracker_->getNumberOfObjects() > 0 && !pause_tracker_) {
 
     // update detector pose in tracker
     {
