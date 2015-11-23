@@ -24,7 +24,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 catkin_package(
   INCLUDE_DIRS include ${CUDA_INCLUDE_DIRS}
   LIBRARIES ${PROJECT_NAME}
-  DEPENDS hdf5 boost
+  DEPENDS HDF5 Boost
 )
 
 # show additional files in qtcreator

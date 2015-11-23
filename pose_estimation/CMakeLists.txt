@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(CUDA 6.5 REQUIRED)
 find_package(Eigen REQUIRED)
+find_package(OpenCV REQUIRED)
 add_definitions(${EIGEN_DEFINITIONS})
 
 set(GENCODE_SM20 -gencode=arch=compute_20,code=sm_20)
@@ -31,6 +32,7 @@ catkin_package(
   INCLUDE_DIRS include ${CUDA_INCLUDE_DIRS}
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS siftgpu rendering utilities
+  DEPENDS OpenCV CUDA
 )
 
 # show additional files in qtcreator
@@ -61,6 +63,7 @@ cuda_add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${CUDA_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 catkin_add_gtest(test_pose_estimation src/test/utest.cpp)
