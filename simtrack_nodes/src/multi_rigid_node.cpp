@@ -217,6 +217,9 @@ bool MultiRigidNode::start() {
   switch_objects_srv_ = nh_.advertiseService(
       "/simtrack/switch_objects", &MultiRigidNode::switchObjects, this);
 
+  enable_service_srv_ = nh_.advertiseService(
+      "/simtrack/enable", &MultiRigidNode::enableService, this);
+
   bool compressed_streams = false;
   ros::param::get("simtrack/use_compressed_streams", compressed_streams);
 
@@ -285,6 +288,107 @@ bool MultiRigidNode::switchObjects(simtrack_nodes::SwitchObjectsRequest &req,
   return true;
 }
 
+
+// This can be used to enable/disable the detector or tracker remotely.
+bool MultiRigidNode::enableService(simtrack_nodes::EnableServiceRequest &req,
+                   simtrack_nodes::EnableServiceResponse &res) {
+    pause_detector_ = !req.enable_detector;
+    pause_tracker_ = !req.enable_tracker;
+
+    if (req.enable_detector)
+        ROS_INFO("Enabling detector");
+    else
+        ROS_INFO("Disabling detector");
+
+    if (req.enable_tracker)
+        ROS_INFO("Enabling tracker");
+    else
+        ROS_INFO("Disabling tracker");
+
+    return true;
+}
+
+// This allows the detector to be used as a stand-alone service. Blocks until all the requested
+// objects have been detected, and returns their poses.
+bool MultiRigidNode::detectObjectService(simtrack_nodes::DetectObjectsRequest &req,
+                   simtrack_nodes::DetectObjectsResponse &res) {
+
+    // Make sure to maintain the old detector state.
+    bool detector_is_enabled = detector_enabled_.load();
+    detector_enabled_.store(true);
+
+    std::vector<std::string> models = obj_filenames_;
+    // Switch to the new models to detect.
+    {
+        simtrack_nodes::SwitchObjectsRequest switchReq;
+        switchReq.model_names = req.model_names;
+        simtrack_nodes::SwitchObjectsResponse switchRes;
+        switchObjects(switchReq, switchRes);
+    }
+    // Sleep to allow detector to switch objects
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    // Wait for timeout if necessary.
+    float timeout = req.timeout_seconds;
+    float time = 0;
+    bool has_all_objects;
+    std::map<int, pose::TranslationRotation3D> pose_map;
+    // Wait for the detector to return poses for all the models in the list.
+    while (!has_all_objects && time < timeout) {
+        std::lock_guard<std::mutex> lock(most_recent_detector_pose_mutex_);
+        pose_map[most_recent_detector_object_index_] = most_recent_detector_pose_;
+        has_all_objects = true;
+
+        // Check if we found the object in the list.
+        for (int i = 0; i < (int)objects_.size(); i++) {
+            if (pose_map.find(i) == pose_map.end()) {
+                has_all_objects = false;
+                break;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        time += 16 * 0.001;
+    }
+
+    // Publish each detected pose.
+    for (std::map<int, pose::TranslationRotation3D>::iterator it = pose_map.begin();
+            it != pose_map.end(); it++)
+    {
+        res.detected_models.push_back(objects_[it->first].label_);
+        double t[3];
+        it->second.getT(t);
+        double x, y, z, w;
+        it->second.getQuaternion(x, y, z, w);
+
+        geometry_msgs::Pose pose;
+        pose.position.x = t[0];
+        pose.position.y = t[1];
+        pose.position.z = t[2];
+        pose.orientation.x = x;
+        pose.orientation.y = y;
+        pose.orientation.z = z;
+        pose.orientation.w = w;
+        geometry_msgs::PoseStamped poseStamped;
+        poseStamped.pose = pose;
+        poseStamped.header.frame_id = last_frame_id_;
+        poseStamped.header.stamp = last_timestamp_;
+        res.detected_poses.push_back(poseStamped);
+
+    }
+
+    // Switch back to the original detector state.
+    detector_enabled_.store(detector_is_enabled);
+
+    // Switch back to the old models
+    {
+        simtrack_nodes::SwitchObjectsRequest switchReq;
+        switchReq.model_names = models;
+        simtrack_nodes::SwitchObjectsResponse switchRes;
+        switchObjects(switchReq, switchRes);
+    }
+    return true;
+}
+
 void MultiRigidNode::depthAndColorCb(
     const sensor_msgs::ImageConstPtr &depth_msg,
     const sensor_msgs::ImageConstPtr &rgb_msg,
@@ -305,7 +409,8 @@ void MultiRigidNode::depthAndColorCb(
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
-
+  last_frame_id_ = rgb_msg->header.frame_id;
+  last_timestamp_ = rgb_msg->header.stamp;
   updatePose(cv_rgb_ptr, cv_depth_ptr, rgb_msg->header.frame_id);
 }
 
@@ -334,6 +439,7 @@ void MultiRigidNode::colorOnlyCb(
 void MultiRigidNode::updatePose(const cv_bridge::CvImageConstPtr &cv_rgb_ptr,
                                 const cv_bridge::CvImageConstPtr &cv_depth_ptr,
                                 const std::string &frame_id) {
+
   if ((!color_only_mode_) && (cv_depth_ptr == nullptr))
     throw std::runtime_error("MultiRigidNode::updatePose: received "
                              "nullptr depth while not in color_only_mode_\n");
@@ -396,7 +502,7 @@ void MultiRigidNode::updatePose(const cv_bridge::CvImageConstPtr &cv_rgb_ptr,
 
   // process frame if objects loaded in tracker
   // ------------------------------------------
-  if (multi_rigid_tracker_->getNumberOfObjects() > 0) {
+  if (multi_rigid_tracker_->getNumberOfObjects() > 0 && !pause_tracker_) {
 
     // update detector pose in tracker
     {
@@ -444,8 +550,13 @@ void MultiRigidNode::updatePose(const cv_bridge::CvImageConstPtr &cv_rgb_ptr,
 
     // disable detector if all objects tracked and auto-disable enabled
     // (single-gpu case)
-    if (auto_disable_detector_)
+    if (auto_disable_detector_ && !pause_detector_)
       detector_enabled_.store(!multi_rigid_tracker_->areAllPosesReliable());
+
+    if (pause_detector_)
+        detector_enabled_.store(false);
+    else if (!pause_detector_ && !auto_disable_detector_)
+        detector_enabled_.store(true);
 
     // generate output image
     cv::Mat texture = multi_rigid_tracker_->generateOutputImage(output_image_);

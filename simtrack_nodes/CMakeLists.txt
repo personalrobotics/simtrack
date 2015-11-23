@@ -28,6 +28,8 @@ add_service_files(
   FILES
   SwitchCamera.srv
   SwitchObjects.srv
+  EnableService.srv
+  DetectObjects.srv
 )
 
 generate_messages(
