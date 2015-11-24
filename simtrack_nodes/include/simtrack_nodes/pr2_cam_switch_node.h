@@ -52,8 +52,8 @@
 #include <multi_rigid_detector.h>
 #include <dynamic_reconfigure/server.h>
 #include <simtrack_nodes/VisualizationConfig.h>
-#include <simtrack_nodes/SwitchCamera.h>
-#include <simtrack_nodes/SwitchObjects.h>
+#include <simtrack_msgs/SwitchCamera.h>
+#include <simtrack_msgs/SwitchObjects.h>
 #include <tf/transform_listener.h>
 
 namespace simtrack {
@@ -67,11 +67,11 @@ public:
   bool start();
 
 private:
-  bool switchCamera(simtrack_nodes::SwitchCameraRequest &req,
-                    simtrack_nodes::SwitchCameraResponse &res);
+  bool switchCamera(simtrack_msgs::SwitchCameraRequest &req,
+                    simtrack_msgs::SwitchCameraResponse &res);
 
-  bool switchObjects(simtrack_nodes::SwitchObjectsRequest &req,
-                     simtrack_nodes::SwitchObjectsResponse &res);
+  bool switchObjects(simtrack_msgs::SwitchObjectsRequest &req,
+                     simtrack_msgs::SwitchObjectsResponse &res);
 
   void depthAndColorCb(const sensor_msgs::ImageConstPtr &depth_msg,
                        const sensor_msgs::ImageConstPtr &rgb_msg,

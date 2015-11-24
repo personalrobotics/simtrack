@@ -245,8 +245,8 @@ bool PR2CamSwitchNode::start() {
   return true;
 }
 
-bool PR2CamSwitchNode::switchCamera(simtrack_nodes::SwitchCameraRequest &req,
-                                    simtrack_nodes::SwitchCameraResponse &res) {
+bool PR2CamSwitchNode::switchCamera(simtrack_msgs::SwitchCameraRequest &req,
+                                    simtrack_msgs::SwitchCameraResponse &res) {
   ROS_INFO("simtrack switching to camera: %d", req.camera);
   setupCameraSubscribers(req.camera);
   switched_tracker_camera_ = true;
@@ -254,8 +254,8 @@ bool PR2CamSwitchNode::switchCamera(simtrack_nodes::SwitchCameraRequest &req,
 }
 
 bool
-PR2CamSwitchNode::switchObjects(simtrack_nodes::SwitchObjectsRequest &req,
-                                simtrack_nodes::SwitchObjectsResponse &res) {
+PR2CamSwitchNode::switchObjects(simtrack_msgs::SwitchObjectsRequest &req,
+                                simtrack_msgs::SwitchObjectsResponse &res) {
   std::stringstream ss;
   ss << "simtrack switching to models: ";
   for (auto &it : req.model_names)
