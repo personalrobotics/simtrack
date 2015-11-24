@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   geometry_msgs
   interface
+  simtrack_msgs
 )
 
 find_package(OpenCV 2.4.8 REQUIRED)
@@ -22,21 +23,6 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 generate_dynamic_reconfigure_options(
   cfg/Visualization.cfg
-)
-
-add_service_files(
-  FILES
-  SwitchCamera.srv
-  SwitchObjects.srv
-  EnableService.srv
-  DetectObjects.srv
-)
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-  sensor_msgs
 )
 
 catkin_package(

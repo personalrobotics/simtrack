@@ -51,9 +51,9 @@
 #include <multi_rigid_detector.h>
 #include <dynamic_reconfigure/server.h>
 #include <simtrack_nodes/VisualizationConfig.h>
-#include <simtrack_nodes/SwitchObjects.h>
-#include <simtrack_nodes/EnableService.h>
-#include <simtrack_nodes/DetectObjects.h>
+#include <simtrack_msgs/SwitchObjects.h>
+#include <simtrack_msgs/EnableService.h>
+#include <simtrack_msgs/DetectObjects.h>
 
 namespace simtrack {
 
@@ -66,12 +66,12 @@ public:
   bool start();
 
 private:
-  bool switchObjects(simtrack_nodes::SwitchObjectsRequest &req,
-                     simtrack_nodes::SwitchObjectsResponse &res);
-  bool enableService(simtrack_nodes::EnableServiceRequest &req,
-                     simtrack_nodes::EnableServiceResponse &res);
-  bool detectObjectService(simtrack_nodes::DetectObjectsRequest &req,
-                     simtrack_nodes::DetectObjectsResponse &res);
+  bool switchObjects(simtrack_msgs::SwitchObjectsRequest &req,
+                     simtrack_msgs::SwitchObjectsResponse &res);
+  bool enableService(simtrack_msgs::EnableServiceRequest &req,
+                     simtrack_msgs::EnableServiceResponse &res);
+  bool detectObjectService(simtrack_msgs::DetectObjectsRequest &req,
+                     simtrack_msgs::DetectObjectsResponse &res);
 
   void depthAndColorCb(const sensor_msgs::ImageConstPtr &depth_msg,
                        const sensor_msgs::ImageConstPtr &rgb_msg,

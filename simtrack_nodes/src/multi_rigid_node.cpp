@@ -261,8 +261,8 @@ bool MultiRigidNode::start() {
   return true;
 }
 
-bool MultiRigidNode::switchObjects(simtrack_nodes::SwitchObjectsRequest &req,
-                                   simtrack_nodes::SwitchObjectsResponse &res) {
+bool MultiRigidNode::switchObjects(simtrack_msgs::SwitchObjectsRequest &req,
+                                   simtrack_msgs::SwitchObjectsResponse &res) {
   std::stringstream ss;
   ss << "simtrack switching to models: ";
   for (auto &it : req.model_names)
@@ -290,8 +290,8 @@ bool MultiRigidNode::switchObjects(simtrack_nodes::SwitchObjectsRequest &req,
 
 
 // This can be used to enable/disable the detector or tracker remotely.
-bool MultiRigidNode::enableService(simtrack_nodes::EnableServiceRequest &req,
-                   simtrack_nodes::EnableServiceResponse &res) {
+bool MultiRigidNode::enableService(simtrack_msgs::EnableServiceRequest &req,
+                   simtrack_msgs::EnableServiceResponse &res) {
     pause_detector_ = !req.enable_detector;
     pause_tracker_ = !req.enable_tracker;
 
@@ -310,8 +310,8 @@ bool MultiRigidNode::enableService(simtrack_nodes::EnableServiceRequest &req,
 
 // This allows the detector to be used as a stand-alone service. Blocks until all the requested
 // objects have been detected, and returns their poses.
-bool MultiRigidNode::detectObjectService(simtrack_nodes::DetectObjectsRequest &req,
-                   simtrack_nodes::DetectObjectsResponse &res) {
+bool MultiRigidNode::detectObjectService(simtrack_msgs::DetectObjectsRequest &req,
+                   simtrack_msgs::DetectObjectsResponse &res) {
 
     // Make sure to maintain the old detector state.
     bool detector_is_enabled = detector_enabled_.load();
@@ -320,9 +320,9 @@ bool MultiRigidNode::detectObjectService(simtrack_nodes::DetectObjectsRequest &r
     std::vector<std::string> models = obj_filenames_;
     // Switch to the new models to detect.
     {
-        simtrack_nodes::SwitchObjectsRequest switchReq;
+        simtrack_msgs::SwitchObjectsRequest switchReq;
         switchReq.model_names = req.model_names;
-        simtrack_nodes::SwitchObjectsResponse switchRes;
+        simtrack_msgs::SwitchObjectsResponse switchRes;
         switchObjects(switchReq, switchRes);
     }
     // Sleep to allow detector to switch objects
@@ -381,9 +381,9 @@ bool MultiRigidNode::detectObjectService(simtrack_nodes::DetectObjectsRequest &r
 
     // Switch back to the old models
     {
-        simtrack_nodes::SwitchObjectsRequest switchReq;
+        simtrack_msgs::SwitchObjectsRequest switchReq;
         switchReq.model_names = models;
-        simtrack_nodes::SwitchObjectsResponse switchRes;
+        simtrack_msgs::SwitchObjectsResponse switchRes;
         switchObjects(switchReq, switchRes);
     }
     return true;
