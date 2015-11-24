@@ -221,7 +221,7 @@ bool MultiRigidNode::start() {
       "/simtrack/enable", &MultiRigidNode::enableService, this);
 
   detect_objects_srv_ = nh_.advertiseService(
-      "/simtrack/detect_objects", &MultiRigidNode::detectObjectsService, this);
+      "/simtrack/detect_objects", &MultiRigidNode::detectObjectService, this);
 
   bool compressed_streams = false;
   ros::param::get("simtrack/use_compressed_streams", compressed_streams);
@@ -320,7 +320,12 @@ bool MultiRigidNode::detectObjectService(simtrack_msgs::DetectObjectsRequest &re
     bool detector_is_enabled = detector_enabled_.load();
     detector_enabled_.store(true);
 
-    std::vector<std::string> models = obj_filenames_;
+    std::vector<std::string> models;
+    
+    for (size_t i = 0; i < objects_.size(); i++) {
+        models.push_back(objects_.at(i).label_);
+    }
+
     // Switch to the new models to detect.
     {
         simtrack_msgs::SwitchObjectsRequest switchReq;
