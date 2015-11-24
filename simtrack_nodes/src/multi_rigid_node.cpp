@@ -320,7 +320,12 @@ bool MultiRigidNode::detectObjectService(simtrack_msgs::DetectObjectsRequest &re
     bool detector_is_enabled = detector_enabled_.load();
     detector_enabled_.store(true);
 
-    std::vector<std::string> models = obj_filenames_;
+    std::vector<std::string> models;
+    
+    for (size_t i = 0; i < objects_.size(); i++) {
+        models.push_back(objects_.at(i).label_);
+    }
+
     // Switch to the new models to detect.
     {
         simtrack_msgs::SwitchObjectsRequest switchReq;
