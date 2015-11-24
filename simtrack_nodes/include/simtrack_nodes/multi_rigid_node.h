@@ -164,6 +164,7 @@ private:
   // Services
   ros::ServiceServer switch_objects_srv_;
   ros::ServiceServer enable_service_srv_;
+  ros::ServiceServer detect_objects_srv_;
 
   // Publishers
   boost::shared_ptr<image_transport::ImageTransport> debug_img_it_;
