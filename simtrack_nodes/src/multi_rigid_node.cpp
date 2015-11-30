@@ -327,6 +327,7 @@ bool MultiRigidNode::detectObjectService(simtrack_msgs::DetectObjectsRequest &re
     }
 
     // Switch to the new models to detect.
+    if (req.model_names.size() > 0)
     {
         simtrack_msgs::SwitchObjectsRequest switchReq;
         switchReq.model_names = req.model_names;
@@ -388,6 +389,7 @@ bool MultiRigidNode::detectObjectService(simtrack_msgs::DetectObjectsRequest &re
     detector_enabled_.store(detector_is_enabled);
 
     // Switch back to the old models
+    if (req.model_names.size() > 0)
     {
         simtrack_msgs::SwitchObjectsRequest switchReq;
         switchReq.model_names = models;
